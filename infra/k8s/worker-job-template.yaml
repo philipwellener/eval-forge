@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: evalforge-worker
+  namespace: evalforge
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: worker
+          image: evalforge-worker:latest
+          imagePullPolicy: Never
+          env:
+            - name: REDIS_URL
+              value: redis://redis:6379
+            - name: API_URL
+              value: http://api:8000
+            - name: ONE_SHOT
+              value: "true"
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 500m
+            limits:
+              memory: 512Mi
+              cpu: 500m

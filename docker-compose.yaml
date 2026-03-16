@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: evalforge
+      POSTGRES_PASSWORD: evalforge
+      POSTGRES_DB: evalforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evalforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://evalforge:evalforge@postgres:5432/evalforge
+      REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /data/policies
+    volumes:
+      - ./api:/app/api
+      - policy_data:/data/policies
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.worker
+    environment:
+      REDIS_URL: redis://redis:6379
+      API_URL: http://api:8000
+    volumes:
+      - policy_data:/data/policies
+    depends_on:
+      api:
+        condition: service_started
+    deploy:
+      replicas: 4
+
+volumes:
+  pgdata:
+  policy_data:

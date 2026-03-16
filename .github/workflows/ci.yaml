@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --extra dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  test-api:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --extra dev
+      - run: uv pip install aiosqlite
+      - run: uv run pytest tests/ -v
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test-api]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t evalforge-api:latest -f infra/docker/Dockerfile.api .
+      - name: Build Worker image
+        run: docker build -t evalforge-worker:latest -f infra/docker/Dockerfile.worker .
+
+  integration:
+    runs-on: ubuntu-latest
+    needs: [build]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: evalforge
+          POSTGRES_PASSWORD: evalforge
+          POSTGRES_DB: evalforge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --extra worker --extra dev
+      - name: Start API
+        run: |
+          uv run uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+        env:
+          DATABASE_URL: postgresql+asyncpg://evalforge:evalforge@localhost:5432/evalforge
+          REDIS_URL: redis://localhost:6379
+      - name: Run smoke test
+        run: uv run python scripts/smoke_test.py
+        env:
+          API_URL: http://localhost:8000

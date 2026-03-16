@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-950 text-gray-100 antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg bg-gray-900 border border-gray-800 p-4;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-pending {
+    @apply bg-yellow-900/50 text-yellow-300 border border-yellow-700/50;
+  }
+
+  .badge-running {
+    @apply bg-blue-900/50 text-blue-300 border border-blue-700/50;
+  }
+
+  .badge-completed {
+    @apply bg-emerald-900/50 text-emerald-300 border border-emerald-700/50;
+  }
+
+  .badge-failed {
+    @apply bg-red-900/50 text-red-300 border border-red-700/50;
+  }
+
+  .btn-primary {
+    @apply rounded-md bg-cyan-600 px-3 py-1.5 text-sm font-medium text-white
+           hover:bg-cyan-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .table-row {
+    @apply border-b border-gray-800 bg-gray-900 hover:bg-gray-800/70 transition-colors;
+  }
+
+  .table-header {
+    @apply bg-gray-900/80 text-gray-400 text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .select-input {
+    @apply rounded-md border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-200
+           focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}

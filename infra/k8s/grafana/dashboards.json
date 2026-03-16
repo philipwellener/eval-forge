@@ -1,0 +1,267 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "evalforge-overview",
+    "title": "EvalForge Overview",
+    "tags": ["evalforge"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "15s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "title": "System Overview",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "title": "Request Rate",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{namespace=\"evalforge\"}[5m]))",
+            "legendFormat": "Requests/s",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "title": "Error Rate",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{namespace=\"evalforge\", status=~\"5..\"}[5m])) / sum(rate(http_requests_total{namespace=\"evalforge\"}[5m])) * 100",
+            "legendFormat": "Error %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "lineWidth": 2
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 5 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Evaluation Performance",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "title": "Evaluation Success Rate",
+        "type": "gauge",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+        "targets": [
+          {
+            "expr": "sum(rate(evalforge_evaluations_total{namespace=\"evalforge\", status=\"success\"}[5m])) / sum(rate(evalforge_evaluations_total{namespace=\"evalforge\"}[5m])) * 100",
+            "legendFormat": "Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 80 },
+                { "color": "green", "value": 95 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Evaluation Duration",
+        "type": "histogram",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(evalforge_evaluation_duration_seconds_bucket{namespace=\"evalforge\"}[5m])) by (le))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.90, sum(rate(evalforge_evaluation_duration_seconds_bucket{namespace=\"evalforge\"}[5m])) by (le))",
+            "legendFormat": "p90",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(evalforge_evaluation_duration_seconds_bucket{namespace=\"evalforge\"}[5m])) by (le))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "title": "Resource Utilization",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "title": "Memory RSS",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+        "targets": [
+          {
+            "expr": "sum(process_resident_memory_bytes{namespace=\"evalforge\"}) by (pod)",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "title": "Active Jobs",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+        "targets": [
+          {
+            "expr": "evalforge_active_jobs{namespace=\"evalforge\"}",
+            "legendFormat": "Active Jobs",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "bars",
+              "fillOpacity": 50,
+              "lineWidth": 1
+            }
+          }
+        }
+      },
+      {
+        "title": "SLIs",
+        "type": "row",
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "title": "P99 Latency",
+        "type": "timeseries",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace=\"evalforge\"}[5m])) by (le))",
+            "legendFormat": "p99 Latency",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 15,
+              "lineWidth": 2
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 0.5 },
+                { "color": "red", "value": 1.0 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Availability",
+        "type": "gauge",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+        "targets": [
+          {
+            "expr": "(1 - sum(rate(http_requests_total{namespace=\"evalforge\", status=~\"5..\"}[5m])) / sum(rate(http_requests_total{namespace=\"evalforge\"}[5m]))) * 100",
+            "legendFormat": "Availability",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 99 },
+                { "color": "green", "value": 99.9 }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}
