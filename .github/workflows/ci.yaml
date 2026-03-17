@@ -70,13 +70,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
       - run: uv sync --extra worker --extra dev
-      - name: Start API
+      - name: Start API and worker
         run: |
           uv run uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+          uv run python -m worker.runner &
           sleep 5
         env:
           DATABASE_URL: postgresql+asyncpg://evalforge:evalforge@localhost:5432/evalforge
           REDIS_URL: redis://localhost:6379
+          API_URL: http://localhost:8000
       - name: Run smoke test
         run: uv run python scripts/smoke_test.py
         env:
