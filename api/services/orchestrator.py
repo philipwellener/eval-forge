@@ -1,4 +1,5 @@
 """Kubernetes Job orchestrator for evaluation runs."""
+
 import asyncio
 import logging
 import os
@@ -32,10 +33,19 @@ class JobOrchestrator:
         self._running = False
         await client.ApiClient().close()
 
-    async def create_job(self, run_id: str, environment: str, policy_path: str, num_runs: int, run_config: dict | None = None):
+    async def create_job(
+        self,
+        run_id: str,
+        environment: str,
+        policy_path: str,
+        num_runs: int,
+        run_config: dict | None = None,
+    ):
         active = await self.get_active_job_count()
         if active >= MAX_CONCURRENT_JOBS:
-            logger.warning(f"Concurrency limit reached ({active}/{MAX_CONCURRENT_JOBS}), queuing job")
+            logger.warning(
+                f"Concurrency limit reached ({active}/{MAX_CONCURRENT_JOBS}), queuing job"
+            )
             return None
 
         job_name = f"eval-{run_id[:8]}"
@@ -108,9 +118,9 @@ class JobOrchestrator:
             counts = {"active": 0, "succeeded": 0, "failed": 0}
             for j in jobs.items:
                 if j.status.active:
-                    counts["active"] += (j.status.active or 0)
-                counts["succeeded"] += (j.status.succeeded or 0)
-                counts["failed"] += (j.status.failed or 0)
+                    counts["active"] += j.status.active or 0
+                counts["succeeded"] += j.status.succeeded or 0
+                counts["failed"] += j.status.failed or 0
             return counts
         except Exception:
             return {"active": 0, "succeeded": 0, "failed": 0, "error": "unavailable"}
@@ -136,7 +146,9 @@ class JobOrchestrator:
                             result = await session.execute(
                                 select(EvaluationRun).where(
                                     EvaluationRun.id == run_id,
-                                    EvaluationRun.status.in_([RunStatus.PENDING, RunStatus.RUNNING]),
+                                    EvaluationRun.status.in_(
+                                        [RunStatus.PENDING, RunStatus.RUNNING]
+                                    ),
                                 )
                             )
                             run = result.scalar_one_or_none()

@@ -42,6 +42,16 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "evalforge"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "evalforge"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
   volumeClaimTemplates:
     - metadata:
         name: postgres-data
@@ -50,4 +60,4 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 5Gi

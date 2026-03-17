@@ -139,7 +139,7 @@ async def process_job(message_data: dict, reporter: ResultReporter):
     await reporter.update_run_status(run_id, "running")
 
     for i in range(num_runs):
-        logger.info(f"  Episode {i+1}/{num_runs} for run {run_id}")
+        logger.info(f"  Episode {i + 1}/{num_runs} for run {run_id}")
         result = await run_episode(env, policy, config=env_config)
 
         await reporter.report_result(

@@ -60,11 +60,14 @@ class PickPlaceEnv(BaseEnvironment):
             p.resetJointState(self._panda_id, i, val, physicsClientId=self._physics_client)
 
         cfg = config or {}
-        cube_pos = cfg.get("cube_pos", [
-            np.random.uniform(0.4, 0.6),
-            np.random.uniform(-0.2, 0.2),
-            0.625,  # table height
-        ])
+        cube_pos = cfg.get(
+            "cube_pos",
+            [
+                np.random.uniform(0.4, 0.6),
+                np.random.uniform(-0.2, 0.2),
+                0.625,  # table height
+            ],
+        )
 
         self._cube_id = p.loadURDF(
             "cube_small.urdf",
@@ -72,11 +75,16 @@ class PickPlaceEnv(BaseEnvironment):
             physicsClientId=self._physics_client,
         )
 
-        self._target_pos = np.array(cfg.get("target", [
-            np.random.uniform(0.4, 0.6),
-            np.random.uniform(-0.2, 0.2),
-            0.625,
-        ]))
+        self._target_pos = np.array(
+            cfg.get(
+                "target",
+                [
+                    np.random.uniform(0.4, 0.6),
+                    np.random.uniform(-0.2, 0.2),
+                    0.625,
+                ],
+            )
+        )
 
         # Let things settle
         for _ in range(50):
@@ -91,7 +99,8 @@ class PickPlaceEnv(BaseEnvironment):
         # Arm joints
         for i in range(7):
             p.setJointMotorControl2(
-                self._panda_id, i,
+                self._panda_id,
+                i,
                 controlMode=p.VELOCITY_CONTROL,
                 targetVelocity=float(action[i]),
                 force=87,
@@ -102,7 +111,8 @@ class PickPlaceEnv(BaseEnvironment):
         gripper_vel = float(action[7]) * 0.05
         for j in self._finger_joints:
             p.setJointMotorControl2(
-                self._panda_id, j,
+                self._panda_id,
+                j,
                 controlMode=p.VELOCITY_CONTROL,
                 targetVelocity=gripper_vel,
                 force=20,
@@ -121,24 +131,38 @@ class PickPlaceEnv(BaseEnvironment):
         return obs, reward, done, {"cube_target_distance": dist}
 
     def get_observation(self) -> np.ndarray:
-        joint_states = p.getJointStates(self._panda_id, range(7), physicsClientId=self._physics_client)
+        joint_states = p.getJointStates(
+            self._panda_id, range(7), physicsClientId=self._physics_client
+        )
         joint_pos = np.array([s[0] for s in joint_states])
 
-        ee_state = p.getLinkState(self._panda_id, self._ee_link, physicsClientId=self._physics_client)
+        ee_state = p.getLinkState(
+            self._panda_id, self._ee_link, physicsClientId=self._physics_client
+        )
         ee_pos = np.array(ee_state[0])
 
-        cube_pos, _ = p.getBasePositionAndOrientation(self._cube_id, physicsClientId=self._physics_client)
+        cube_pos, _ = p.getBasePositionAndOrientation(
+            self._cube_id, physicsClientId=self._physics_client
+        )
         cube_pos = np.array(cube_pos)
 
-        finger_states = p.getJointStates(self._panda_id, self._finger_joints, physicsClientId=self._physics_client)
+        finger_states = p.getJointStates(
+            self._panda_id, self._finger_joints, physicsClientId=self._physics_client
+        )
         finger_pos = np.array([s[0] for s in finger_states])
         gripper_open = np.array([finger_pos.sum()])
 
-        return np.concatenate([joint_pos, ee_pos, cube_pos, self._target_pos, gripper_open, finger_pos])
+        return np.concatenate(
+            [joint_pos, ee_pos, cube_pos, self._target_pos, gripper_open, finger_pos]
+        )
 
     def get_success(self) -> bool:
-        cube_pos, _ = p.getBasePositionAndOrientation(self._cube_id, physicsClientId=self._physics_client)
-        return float(np.linalg.norm(np.array(cube_pos) - self._target_pos)) < self._success_threshold
+        cube_pos, _ = p.getBasePositionAndOrientation(
+            self._cube_id, physicsClientId=self._physics_client
+        )
+        return (
+            float(np.linalg.norm(np.array(cube_pos) - self._target_pos)) < self._success_threshold
+        )
 
     def close(self):
         if self._physics_client is not None:

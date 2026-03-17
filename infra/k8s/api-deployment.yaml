@@ -1,4 +1,49 @@
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: evalforge-api
+  namespace: evalforge
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: evalforge-job-manager
+  namespace: evalforge
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: evalforge-api-job-manager
+  namespace: evalforge
+subjects:
+  - kind: ServiceAccount
+    name: evalforge-api
+    namespace: evalforge
+roleRef:
+  kind: Role
+  name: evalforge-job-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: policy-data
+  namespace: evalforge
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: api
@@ -26,6 +71,7 @@ spec:
       labels:
         app: api
     spec:
+      serviceAccountName: evalforge-api
       containers:
         - name: api
           image: evalforge-api:latest
@@ -34,27 +80,40 @@ spec:
             - containerPort: 8000
           env:
             - name: DATABASE_URL
-              value: postgresql://evalforge:evalforge@postgres:5432/evalforge
+              value: postgresql+asyncpg://evalforge:evalforge@postgres:5432/evalforge
             - name: REDIS_URL
               value: redis://redis:6379
             - name: UPLOAD_DIR
               value: /data/policies
+            - name: K8S_NAMESPACE
+              value: evalforge
+            - name: WORKER_IMAGE
+              value: evalforge-worker:latest
+            - name: API_INTERNAL_URL
+              value: http://api:8000
+          volumeMounts:
+            - name: policy-data
+              mountPath: /data/policies
           resources:
             requests:
               memory: 256Mi
               cpu: 250m
             limits:
-              memory: 256Mi
-              cpu: 250m
+              memory: 512Mi
+              cpu: 500m
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /healthz
               port: 8000
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 5
+      volumes:
+        - name: policy-data
+          persistentVolumeClaim:
+            claimName: policy-data

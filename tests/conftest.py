@@ -66,12 +66,14 @@ async def client(db_engine, mock_queue):
 
     # Mock the queue
     import api.services.queue as queue_module
+
     original_queue = queue_module.job_queue
     queue_module.job_queue = mock_queue
 
     # Also patch the imported reference in routes
     import api.routes.evaluations as eval_routes
     import api.routes.health as health_routes
+
     eval_routes.job_queue = mock_queue
     health_routes.job_queue = mock_queue
 

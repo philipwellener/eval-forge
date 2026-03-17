@@ -51,11 +51,16 @@ class ReachEnv(BaseEnvironment):
 
         # Random target within reach
         cfg = config or {}
-        self._target_pos = np.array(cfg.get("target", [
-            np.random.uniform(0.3, 0.7),
-            np.random.uniform(-0.4, 0.4),
-            np.random.uniform(0.2, 0.6),
-        ]))
+        self._target_pos = np.array(
+            cfg.get(
+                "target",
+                [
+                    np.random.uniform(0.3, 0.7),
+                    np.random.uniform(-0.4, 0.4),
+                    np.random.uniform(0.2, 0.6),
+                ],
+            )
+        )
 
         self._step_count = 0
         return self.get_observation()
@@ -65,7 +70,8 @@ class ReachEnv(BaseEnvironment):
 
         for i in range(7):
             p.setJointMotorControl2(
-                self._panda_id, i,
+                self._panda_id,
+                i,
                 controlMode=p.VELOCITY_CONTROL,
                 targetVelocity=float(action[i]),
                 force=87,
@@ -84,16 +90,22 @@ class ReachEnv(BaseEnvironment):
         return obs, reward, done, {"distance": dist}
 
     def get_observation(self) -> np.ndarray:
-        joint_states = p.getJointStates(self._panda_id, range(7), physicsClientId=self._physics_client)
+        joint_states = p.getJointStates(
+            self._panda_id, range(7), physicsClientId=self._physics_client
+        )
         joint_pos = np.array([s[0] for s in joint_states])
 
-        ee_state = p.getLinkState(self._panda_id, self._ee_link, physicsClientId=self._physics_client)
+        ee_state = p.getLinkState(
+            self._panda_id, self._ee_link, physicsClientId=self._physics_client
+        )
         ee_pos = np.array(ee_state[0])
 
         return np.concatenate([joint_pos, ee_pos, self._target_pos])
 
     def get_success(self) -> bool:
-        ee_state = p.getLinkState(self._panda_id, self._ee_link, physicsClientId=self._physics_client)
+        ee_state = p.getLinkState(
+            self._panda_id, self._ee_link, physicsClientId=self._physics_client
+        )
         ee_pos = np.array(ee_state[0])
         return float(np.linalg.norm(ee_pos - self._target_pos)) < self._success_threshold
 

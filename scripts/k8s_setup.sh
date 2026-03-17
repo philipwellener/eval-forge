@@ -52,7 +52,7 @@ kubectl -n evalforge wait --for=condition=ready pod -l app=redis --timeout=60s
 kubectl apply -f infra/k8s/api-deployment.yaml
 
 echo "Waiting for API..."
-kubectl -n evalforge wait --for=condition=ready pod -l app=evalforge-api --timeout=120s
+kubectl -n evalforge wait --for=condition=ready pod -l app=api --timeout=120s
 
 # Apply monitoring if files exist
 if [ -d infra/k8s/prometheus ]; then
@@ -60,14 +60,14 @@ if [ -d infra/k8s/prometheus ]; then
 fi
 if [ -d infra/k8s/grafana ]; then
     kubectl create configmap grafana-dashboards \
-        --from-file=evalforge-overview.json=infra/k8s/grafana/dashboards.json \
+        --from-file=dashboards.json=infra/k8s/grafana/dashboards.json \
         -n evalforge --dry-run=client -o yaml | kubectl apply -f -
     kubectl apply -f infra/k8s/grafana/
 fi
 
 # 5. Port forwards
 echo "Setting up port forwards..."
-kubectl -n evalforge port-forward svc/evalforge-api 8000:8000 &
+kubectl -n evalforge port-forward svc/api 8000:8000 &
 echo "  API: http://localhost:8000"
 
 if kubectl -n evalforge get svc grafana &>/dev/null; then

@@ -89,13 +89,15 @@ def main():
 
     print("\n  Results summary:")
     print(f"    Episodes:    {len(results)}")
-    print(f"    Successes:   {successes}/{len(results)} ({successes/len(results):.0%})")
+    print(f"    Successes:   {successes}/{len(results)} ({successes / len(results):.0%})")
     print(f"    Avg time:    {avg_time:.3f}s")
     print(f"    Avg steps:   {avg_steps:.0f}")
 
     for r in results:
         icon = "+" if r["success"] else "-"
-        print(f"    [{icon}] Ep {r['episode_index']}: {r['steps']} steps, {r['wall_clock_time']:.3f}s")
+        print(
+            f"    [{icon}] Ep {r['episode_index']}: {r['steps']} steps, {r['wall_clock_time']:.3f}s"
+        )
 
     print("\nSMOKE TEST PASSED")
     client.close()

@@ -43,7 +43,9 @@ class ClutteredPickEnv(BaseEnvironment):
         p.setTimeStep(1.0 / 240, physicsClientId=self._physics_client)
 
         p.loadURDF("plane.urdf", physicsClientId=self._physics_client)
-        p.loadURDF("table/table.urdf", basePosition=[0.5, 0, 0], physicsClientId=self._physics_client)
+        p.loadURDF(
+            "table/table.urdf", basePosition=[0.5, 0, 0], physicsClientId=self._physics_client
+        )
 
         self._panda_id = p.loadURDF(
             "franka_panda/panda.urdf",
@@ -60,26 +62,35 @@ class ClutteredPickEnv(BaseEnvironment):
         table_h = 0.625
 
         # Target object
-        target_pos = cfg.get("target_obj_pos", [
-            np.random.uniform(0.35, 0.65),
-            np.random.uniform(-0.15, 0.15),
-            table_h,
-        ])
+        target_pos = cfg.get(
+            "target_obj_pos",
+            [
+                np.random.uniform(0.35, 0.65),
+                np.random.uniform(-0.15, 0.15),
+                table_h,
+            ],
+        )
         self._target_obj_id = p.loadURDF(
             "cube_small.urdf",
             basePosition=target_pos,
             physicsClientId=self._physics_client,
         )
         # Color target red
-        p.changeVisualShape(self._target_obj_id, -1, rgbaColor=[1, 0, 0, 1],
-                            physicsClientId=self._physics_client)
+        p.changeVisualShape(
+            self._target_obj_id, -1, rgbaColor=[1, 0, 0, 1], physicsClientId=self._physics_client
+        )
 
         # Place target
-        self._target_pos = np.array(cfg.get("place_target", [
-            np.random.uniform(0.35, 0.65),
-            np.random.uniform(-0.3, 0.3),
-            table_h,
-        ]))
+        self._target_pos = np.array(
+            cfg.get(
+                "place_target",
+                [
+                    np.random.uniform(0.35, 0.65),
+                    np.random.uniform(-0.3, 0.3),
+                    table_h,
+                ],
+            )
+        )
 
         # Obstacles
         self._obstacle_ids = []
@@ -96,8 +107,9 @@ class ClutteredPickEnv(BaseEnvironment):
                 basePosition=[ox, oy, table_h],
                 physicsClientId=self._physics_client,
             )
-            p.changeVisualShape(obs_id, -1, rgbaColor=[0.5, 0.5, 0.5, 1],
-                                physicsClientId=self._physics_client)
+            p.changeVisualShape(
+                obs_id, -1, rgbaColor=[0.5, 0.5, 0.5, 1], physicsClientId=self._physics_client
+            )
             self._obstacle_ids.append(obs_id)
 
         for _ in range(50):
@@ -112,7 +124,8 @@ class ClutteredPickEnv(BaseEnvironment):
 
         for i in range(7):
             p.setJointMotorControl2(
-                self._panda_id, i,
+                self._panda_id,
+                i,
                 controlMode=p.VELOCITY_CONTROL,
                 targetVelocity=float(action[i]),
                 force=87,
@@ -122,7 +135,8 @@ class ClutteredPickEnv(BaseEnvironment):
         gripper_vel = float(action[7]) * 0.05
         for j in self._finger_joints:
             p.setJointMotorControl2(
-                self._panda_id, j,
+                self._panda_id,
+                j,
                 controlMode=p.VELOCITY_CONTROL,
                 targetVelocity=gripper_vel,
                 force=20,
@@ -135,7 +149,8 @@ class ClutteredPickEnv(BaseEnvironment):
         # Check collisions with obstacles
         for obs_id in self._obstacle_ids:
             contacts = p.getContactPoints(
-                bodyA=self._panda_id, bodyB=obs_id,
+                bodyA=self._panda_id,
+                bodyB=obs_id,
                 physicsClientId=self._physics_client,
             )
             if contacts:
@@ -150,16 +165,25 @@ class ClutteredPickEnv(BaseEnvironment):
         reward = -dist + collision_penalty
         done = self.get_success() or self._step_count >= self.max_steps
 
-        return obs, reward, done, {
-            "distance": dist,
-            "collisions": self._collision_count,
-        }
+        return (
+            obs,
+            reward,
+            done,
+            {
+                "distance": dist,
+                "collisions": self._collision_count,
+            },
+        )
 
     def get_observation(self) -> np.ndarray:
-        joint_states = p.getJointStates(self._panda_id, range(7), physicsClientId=self._physics_client)
+        joint_states = p.getJointStates(
+            self._panda_id, range(7), physicsClientId=self._physics_client
+        )
         joint_pos = np.array([s[0] for s in joint_states])
 
-        ee_state = p.getLinkState(self._panda_id, self._ee_link, physicsClientId=self._physics_client)
+        ee_state = p.getLinkState(
+            self._panda_id, self._ee_link, physicsClientId=self._physics_client
+        )
         ee_pos = np.array(ee_state[0])
 
         target_obj_pos, _ = p.getBasePositionAndOrientation(
@@ -167,29 +191,42 @@ class ClutteredPickEnv(BaseEnvironment):
         )
         target_obj_pos = np.array(target_obj_pos)
 
-        finger_states = p.getJointStates(self._panda_id, self._finger_joints, physicsClientId=self._physics_client)
+        finger_states = p.getJointStates(
+            self._panda_id, self._finger_joints, physicsClientId=self._physics_client
+        )
         finger_pos = np.array([s[0] for s in finger_states])
 
         # Nearest obstacle distance (from ee)
         min_dists = []
         for obs_id in self._obstacle_ids:
-            obs_pos, _ = p.getBasePositionAndOrientation(obs_id, physicsClientId=self._physics_client)
+            obs_pos, _ = p.getBasePositionAndOrientation(
+                obs_id, physicsClientId=self._physics_client
+            )
             d = np.linalg.norm(ee_pos - np.array(obs_pos))
             min_dists.append(d)
         nearest_4 = sorted(min_dists)[:4]
         while len(nearest_4) < 4:
             nearest_4.append(1.0)
 
-        return np.concatenate([
-            joint_pos, ee_pos, target_obj_pos, self._target_pos,
-            finger_pos, np.array(nearest_4),
-        ])
+        return np.concatenate(
+            [
+                joint_pos,
+                ee_pos,
+                target_obj_pos,
+                self._target_pos,
+                finger_pos,
+                np.array(nearest_4),
+            ]
+        )
 
     def get_success(self) -> bool:
         target_obj_pos, _ = p.getBasePositionAndOrientation(
             self._target_obj_id, physicsClientId=self._physics_client
         )
-        return float(np.linalg.norm(np.array(target_obj_pos) - self._target_pos)) < self._success_threshold
+        return (
+            float(np.linalg.norm(np.array(target_obj_pos) - self._target_pos))
+            < self._success_threshold
+        )
 
     def close(self):
         if self._physics_client is not None:

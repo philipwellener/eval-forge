@@ -26,7 +26,9 @@ def cli(ctx, api_url):
 @cli.command()
 @click.option("--policy", required=True, type=click.Path(exists=True), help="Path to policy file")
 @click.option("--name", required=True, help="Policy name")
-@click.option("--environment", required=True, type=click.Choice(["reach", "pick_place", "cluttered"]))
+@click.option(
+    "--environment", required=True, type=click.Choice(["reach", "pick_place", "cluttered"])
+)
 @click.option("--num-runs", default=10, help="Number of evaluation episodes")
 @click.option("--wait", is_flag=True, help="Wait for completion")
 @click.pass_context
@@ -127,7 +129,9 @@ def results(ctx, run_id):
 
 @cli.command("list")
 @click.option("--environment", type=click.Choice(["reach", "pick_place", "cluttered"]))
-@click.option("--status", "run_status", type=click.Choice(["pending", "running", "completed", "failed"]))
+@click.option(
+    "--status", "run_status", type=click.Choice(["pending", "running", "completed", "failed"])
+)
 @click.pass_context
 def list_runs(ctx, environment, run_status):
     """List evaluation runs."""
@@ -176,7 +180,11 @@ def compare(ctx, run_ids):
     click.echo("-" * 72)
     for run in data["runs"]:
         sr = f"{run['success_rate']:.0%}" if run.get("success_rate") is not None else "—"
-        at = f"{run['avg_completion_time']:.3f}s" if run.get("avg_completion_time") is not None else "—"
+        at = (
+            f"{run['avg_completion_time']:.3f}s"
+            if run.get("avg_completion_time") is not None
+            else "—"
+        )
         click.echo(f"{run['policy_id']:36s}  {run['environment']:12s}  {sr:>8s}  {at:>10s}")
 
     client.close()

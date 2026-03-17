@@ -24,7 +24,14 @@ class JobQueue:
         if self._redis:
             await self._redis.aclose()
 
-    async def publish(self, run_id: str, environment: str, policy_path: str, num_runs: int, config: dict | None = None):
+    async def publish(
+        self,
+        run_id: str,
+        environment: str,
+        policy_path: str,
+        num_runs: int,
+        config: dict | None = None,
+    ):
         message = {
             "run_id": run_id,
             "environment": environment,

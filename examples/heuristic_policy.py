@@ -29,12 +29,13 @@ class HeuristicPolicy:
         """Compute joint velocities to move ee toward target using IK."""
         # Sync IK robot to current joint state
         for i in range(7):
-            p.resetJointState(self._panda, i, float(joint_pos[i]),
-                              physicsClientId=self._ik_client)
+            p.resetJointState(self._panda, i, float(joint_pos[i]), physicsClientId=self._ik_client)
 
         # Compute IK for target
         target_joints = p.calculateInverseKinematics(
-            self._panda, self._ee_link, target_pos.tolist(),
+            self._panda,
+            self._ee_link,
+            target_pos.tolist(),
             maxNumIterations=50,
             residualThreshold=1e-4,
             physicsClientId=self._ik_client,

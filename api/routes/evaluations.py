@@ -99,9 +99,7 @@ async def get_evaluation(run_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     if not run:
         raise HTTPException(status_code=404, detail="Evaluation run not found")
 
-    results_q = await db.execute(
-        select(EvaluationResult).where(EvaluationResult.run_id == run_id)
-    )
+    results_q = await db.execute(select(EvaluationResult).where(EvaluationResult.run_id == run_id))
     results = results_q.scalars().all()
     return _run_to_response(run, results)
 
@@ -122,9 +120,7 @@ async def get_results(run_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
 @router.post("/results", response_model=EvaluationResultResponse, status_code=201)
 async def create_result(body: EvaluationResultCreate, db: AsyncSession = Depends(get_db)):
-    result_obj = await db.execute(
-        select(EvaluationRun).where(EvaluationRun.id == body.run_id)
-    )
+    result_obj = await db.execute(select(EvaluationRun).where(EvaluationRun.id == body.run_id))
     run = result_obj.scalar_one_or_none()
     if not run:
         raise HTTPException(status_code=404, detail="Evaluation run not found")
